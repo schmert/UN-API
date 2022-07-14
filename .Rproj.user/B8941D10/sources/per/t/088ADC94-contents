@@ -1,0 +1,178 @@
+---
+title: "UN API Example #2"
+author: "Carl Schmertmann"
+date: "13 July 2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Purpose
+
+This is a second example to test the new API for the UN's World Population Propects, described at
+https://population.un.org/dataportal/about/dataapi.  
+
+In this example, as in the first, I skip the JSON formatting and instead access the data using the CSV format. The API uses a vertical bar | as the csv separator character, and csv files all seem to start with a line
+
+>   sep =|
+
+that must be skipped when converting to a tibble or data frame.    
+
+### Initial Setup and Housekeeping
+
+```{r housekeeping, message=FALSE}
+
+library(tidyverse)
+library(gganimate)
+library(gifski)
+
+base_url = 'https://population.un.org/dataportalapi/api/v1'
+```
+
+### Example: Population Pyramids for Argentina by Single-Year Ages
+
+The objective is to download population estimates, by sex and single-year age, for Argentina. We'll then plot the data as population pyramids.
+
+To figure out what API codes to use, first check the list of "topics":
+
+```{r topics}
+target = paste0(base_url, '/topics/?format=csv')
+
+df_topics = read.csv(target, sep='|', skip=1)
+
+df_topics
+
+```
+and we discover that the topic we want has Id=1, Name='Population', ShortName='Pop'.
+
+Now look at the available variables for that topic:
+
+### Indicators
+```{r indicators}
+
+target = paste0(base_url,'/indicators/?format=csv')
+
+df_indicators = read.csv(target, sep='|', skip=1) %>% 
+                   filter(TopicName == 'Population') %>% 
+                   select(Id:ShortName, SourceStartYear, SourceEndYear)
+
+df_indicators 
+
+```
+
+We want the 1-year estimates, which is indicator # **47** with short name **PopByAge1AndSex**.  Estimates are available from 1950 to 2100. 
+
+Last, we need to figure out how to ask for Argentina. We can use the API to query the available locations and search for *Argentina*:
+
+```{r locations}
+
+target = paste0(base_url, '/locations?sort=id&format=csv')
+
+df_locations = read.csv(target, sep='|', skip=1) 
+
+df_locations %>% 
+  filter(Name == 'Argentina')
+
+
+```
+
+So Argentina has location Id=**32**. 
+
+### Retrieve the data using indicator, location, and years
+
+
+The URL for our specific query is the base_url + 
+
+> /data/indicators/47/locations/32/start/1980/end/2020/?format=csv
+
+Let's try it:
+```{r get_data}
+
+my_indicator = 47
+my_location  = 32
+my_startyr   = 1980
+my_endyr     = 2020
+
+target = paste0(base_url,
+                '/data/indicators/',my_indicator,
+                '/locations/',my_location,
+                '/start/',my_startyr,
+                '/end/',my_endyr,
+                '/?format=csv')
+
+target
+
+df_data = read.csv(target, sep='|', skip=1)
+
+# the "AgeLabel" variable for this indicator has character values 0,1,2,...,99,100+
+# convert to integers
+
+AgeLabel_vals = c(as.character(0:99), '100+')
+age_vals      = 0:100
+names(age_vals) = AgeLabel_vals
+
+df_data = df_data %>% 
+            mutate(Age = age_vals[AgeLabel])
+
+# look at the data's structure
+
+dim(df_data)
+names(df_data)
+
+# peek at a random bit of the dataframe
+
+df_data %>% 
+  sample_n(size=20) %>% 
+  select(Location, starts_with('Age'), starts_with('Time'), Value) %>% 
+  as_tibble()
+
+
+```
+
+```{r make_plot}
+
+# make a new data frame with the data of interest
+df = df_data %>% 
+      filter(Sex %in% c('Male','Female')) %>% 
+      select(Age, Sex, Year=TimeLabel, Pop=Value) %>% 
+      mutate(Pop = c('Male'= -1,'Female' = +1)[Sex] * Pop)
+
+
+# construct a plot
+
+    custom_labels = function(x) {
+      sprintf('%i', abs(x))
+    }
+
+    pyramids = ggplot(data=df) +
+      aes(x = Age, y = Pop, fill = Sex) + 
+      geom_bar(data=filter(df,Sex == "Female"), stat = "identity", width=.50)  + 
+      geom_bar(data=filter(df,Sex == "Male")  , stat = "identity", width=.50) + 
+      scale_y_continuous(labels = custom_labels, limits=c(-400000,+400000)) +
+      scale_x_continuous(breaks=seq(0,100,10), 
+                         minor_breaks = seq(0,100,5))+
+      labs(y='Population', x='Age',
+           fill='',
+           title = 'ARGENTINA {closest_state}',
+           caption=paste0('Source: UN WPP 2022 API, ',base_url,'\n@Cschmert')) +
+      scale_fill_manual(values=c('red', 'blue')) +
+      guides(fill='none') +
+      geom_text(x=62, y= -300000, label='Male', color='blue',size=6) +
+      geom_text(x=62, y= +300000, label='Female', color='red',size=6) +
+      coord_flip() + 
+      transition_states(Year) +
+      theme_bw() +
+      theme(plot.title=element_text(hjust=0.5,size=20,face='bold'))
+
+    ARG = animate(pyramids, fps=10, duration=20,
+                  start_pause=5, end_pause=5, rewind=FALSE)
+    
+    print(ARG)
+          
+    anim_save(filename = "ARG-pyramids.gif", animation= ARG)
+              
+
+```
+

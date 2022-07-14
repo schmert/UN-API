@@ -1,0 +1,5 @@
+"0","target = paste0(base_url, '/topics/?format=csv')"
+"0",""
+"0","df_topics = read.csv(target, sep='|', skip=1)"
+"0",""
+"0","df_topics"

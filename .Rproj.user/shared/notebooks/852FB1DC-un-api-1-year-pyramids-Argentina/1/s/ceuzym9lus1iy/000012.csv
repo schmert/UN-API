@@ -1,0 +1,7 @@
+"0",""
+"0","target = paste0(base_url, '/locations?sort=id&format=csv')"
+"0",""
+"0","df_locations = read.csv(target, sep='|', skip=1) "
+"0",""
+"0","df_locations %>% "
+"0","  filter(Name == 'Argentina')"

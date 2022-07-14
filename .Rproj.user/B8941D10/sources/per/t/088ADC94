@@ -1,9 +1,9 @@
 {
     "id": "088ADC94",
-    "path": "~/GitHub/UN-API/un-api-example.Rmd",
-    "project_path": "un-api-example.Rmd",
+    "path": "~/GitHub/UN-API/un-api-1-year-pyramids-Argentina.Rmd",
+    "project_path": "un-api-1-year-pyramids-Argentina.Rmd",
     "type": "r_markdown",
-    "hash": "0",
+    "hash": "2898473971",
     "contents": "",
     "dirty": false,
     "created": 1657737168605.0,
@@ -12,15 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "5,3",
-        "scrollLine": "0"
+        "cursorPosition": "175,0",
+        "scrollLine": "162",
+        "last_setup_crc32": "FAD810ACbb338d19"
     },
     "folds": "",
-    "lastKnownWriteTime": 1657736413,
+    "lastKnownWriteTime": 1657808066,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1657736413,
+    "last_content_update": 1657808066393,
     "read_only": false,
     "read_only_alternatives": []
 }

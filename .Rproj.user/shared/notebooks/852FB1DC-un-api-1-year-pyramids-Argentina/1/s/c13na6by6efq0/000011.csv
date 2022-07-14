@@ -1,0 +1,8 @@
+"0",""
+"0","target = paste0(base_url,'/indicators/?format=csv')"
+"0",""
+"0","df_indicators = read.csv(target, sep='|', skip=1) %>% "
+"0","                   filter(TopicName == 'Population') %>% "
+"0","                   select(Id:ShortName, SourceStartYear, SourceEndYear)"
+"0",""
+"0","df_indicators "
